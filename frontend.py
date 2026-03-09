@@ -15,6 +15,12 @@ load_dotenv()
 
 st.set_page_config(page_title="AI Recruiter Pro", layout="wide")
 
+# --- 0. CONFIGURATION (UPDATE THESE!) ---
+# Replace this with your actual Render URL
+BACKEND_URL = "https://your-backend-name.onrender.com" 
+# Replace this with your actual Streamlit URL
+FRONTEND_URL = "https://your-app-name.streamlit.app" 
+
 # --- 1. LOCAL CACHE SYSTEM ---
 CACHE_FILE = "local_cache.json"
 
@@ -57,7 +63,6 @@ PENDING_USERS = cache["pending_users"]
 
 # --- HELPER: PASSWORD STRENGTH CHECKER ---
 def check_password_strength(password):
-    """Returns a score (0-100), a label, and a color based on password strength."""
     if not password:
         return 0, "", ""
     
@@ -72,7 +77,7 @@ def check_password_strength(password):
     elif score == 2:
         return 50, "Medium", "orange"
     elif score == 3:
-        return 75, "Good", "#FFD700" # Gold/Yellow
+        return 75, "Good", "#FFD700" 
     else:
         return 100, "Strong", "green"
 
@@ -126,7 +131,6 @@ if not st.session_state.auth_success:
         st.title("🤖 AI Recruiter")
         
         with st.container(border=True):
-            # === SIGN IN MODE ===
             if st.session_state.auth_mode == "login":
                 st.subheader("Sign In")
                 
@@ -136,9 +140,7 @@ if not st.session_state.auth_success:
                 
                 if st.button("Sign In", use_container_width=True, type="primary"):
                     if email_input in USER_CREDENTIALS and USER_CREDENTIALS[email_input] == pass_input:
-                        # Show instant visual green success feedback
                         st.success("✅ Login Successful!")
-                        
                         st.session_state.auth_success = True
                         st.session_state.user_email = email_input
                         st.session_state.user_name = USER_NAMES.get(email_input, email_input.split('@')[0].capitalize())
@@ -150,7 +152,6 @@ if not st.session_state.auth_success:
                         cache["saved_pass"] = pass_input if remember_me else ""
                         save_cache(cache)
                         
-                        # Wait half a second so the user sees the green success box before transition
                         time.sleep(0.5)
                         st.rerun()
                     else:
@@ -161,17 +162,13 @@ if not st.session_state.auth_success:
                     st.session_state.auth_mode = "signup"
                     st.rerun()
 
-            # === SIGN UP MODE ===
             else:
                 st.subheader("Sign Up")
-                
                 new_name = st.text_input("Full Name", placeholder="e.g. John Doe")
                 new_email = st.text_input("Email Address")
-                
-                # --- PASSWORD STRENGTH MONITOR ---
                 new_pass = st.text_input("Password", type="password")
                 
-                if new_pass: # Triggers when user clicks out of the password box
+                if new_pass:
                     strength_val, strength_lbl, strength_color = check_password_strength(new_pass)
                     st.markdown(f"<p style='color:{strength_color}; margin-bottom: 0px; font-weight: bold;'>Strength: {strength_lbl}</p>", unsafe_allow_html=True)
                     st.progress(strength_val)
@@ -187,7 +184,8 @@ if not st.session_state.auth_success:
                         st.error("Email already registered. Please log in.")
                     else:
                         token = uuid.uuid4().hex
-                        verify_link = f"http://localhost:8501/?verify={token}"
+                        # Point this to your live Streamlit URL
+                        verify_link = f"{FRONTEND_URL}/?verify={token}"
                         
                         PENDING_USERS[token] = {
                             "email": new_email,
@@ -197,32 +195,32 @@ if not st.session_state.auth_success:
                         cache["pending_users"] = PENDING_USERS
                         save_cache(cache)
                         
-                        with st.spinner("Sending verification link to your email..."):
+                        with st.spinner("Sending verification link..."):
                             try:
                                 res = httpx.post(
-                                    "http://localhost:8000/send-verification",
+                                    f"{BACKEND_URL}/send-verification",
                                     params={"email": new_email, "name": new_name, "verify_link": verify_link},
                                     timeout=20.0
                                 )
                                 if res.status_code == 200:
-                                    st.success("Verification link sent! Please check your email inbox to activate your account.")
-                                    time.sleep(1.5) # Let them read the message
+                                    st.success("Verification link sent! Check your inbox.")
+                                    time.sleep(1.5)
                                     st.session_state.auth_mode = "login"
                                     st.rerun()
                                 else:
                                     st.error("Failed to send verification email.")
                             except Exception as e:
-                                st.error(f"Error connecting to email server: {e}")
+                                st.error(f"Error connecting to backend: {e}")
 
                 st.markdown("<div style='text-align: center; margin-top: 15px;'>Already have an account?</div>", unsafe_allow_html=True)
                 if st.button("Log In Here", use_container_width=True):
                     st.session_state.auth_mode = "login"
                     st.rerun()
 
-        # === GOOGLE OAUTH ===
         st.markdown("<p style='text-align: center; color: gray;'>— OR —</p>", unsafe_allow_html=True)
         try:
-            result = oauth2.authorize_button("Continue with Google", "https://www.google.com/favicon.ico", "http://localhost:8501", "openid email profile", "google_auth", use_container_width=True)
+            # Note: Update redirect_uri in Google Console to your FRONTEND_URL
+            result = oauth2.authorize_button("Continue with Google", "https://www.google.com/favicon.ico", FRONTEND_URL, "openid email profile", "google_auth", use_container_width=True)
             if result and "token" in result:
                 st.session_state.auth_success = True
                 st.session_state.user_name = "Google User"
@@ -275,7 +273,6 @@ else:
                     USER_NAMES[st.session_state.user_email] = st.session_state.user_name
                     cache["user_names"] = USER_NAMES
                     save_cache(cache)
-                    
                     st.success("Profile updated!")
                     st.rerun()
 
@@ -304,7 +301,7 @@ else:
                     try:
                         payload = {"jd": jd}
                         file_data = [("files", (f.name, f.getvalue(), "application/pdf")) for f in files]
-                        res = httpx.post("http://localhost:8000/rank", data=payload, files=file_data, timeout=120.0)
+                        res = httpx.post(f"{BACKEND_URL}/rank", data=payload, files=file_data, timeout=120.0)
                         
                         if res.status_code == 200:
                             results = res.json()
@@ -346,7 +343,7 @@ else:
                             with st.spinner(f"Sending email..."):
                                 try:
                                     email_res = httpx.post(
-                                        "http://localhost:8000/send-invite", 
+                                        f"{BACKEND_URL}/send-invite", 
                                         params={"email": cand_email, "name": c['name'], "recruiter_name": st.session_state.user_name},
                                         timeout=20.0
                                     )
@@ -373,15 +370,14 @@ else:
                             save_cache(cache)
                             st.rerun()
 
-                    # --- RENDER VERTICAL CHAT HISTORY ---
                     if st.session_state.show_replies.get(cand_email, False):
                         st.markdown("---") 
                         
                         if cand_email not in st.session_state.fetched_replies:
-                            with st.spinner("Fetching email thread..."):
+                            with st.spinner("Fetching thread..."):
                                 try:
                                     rep_res = httpx.get(
-                                        "http://localhost:8000/check-replies",
+                                        f"{BACKEND_URL}/check-replies",
                                         params={"candidate_email": cand_email},
                                         timeout=20.0
                                     )
@@ -398,7 +394,6 @@ else:
                         
                         if replies:
                             latest_subject = replies[-1]['subject'] 
-                            
                             st.markdown("#### Conversation History")
                             for r in replies:
                                 if r.get("sender") == "Recruiter":
@@ -412,7 +407,6 @@ else:
                         else:
                             st.info("No emails sent or received yet.")
                             
-                        # --- THE NEW REPLY TEXT BOX ---
                         st.markdown("#### Send a Message")
                         reply_text = st.text_area(f"Reply to {c['name']}:", key=f"draft_{cand_email}")
                         
@@ -423,7 +417,7 @@ else:
                                 with st.spinner("Sending message..."):
                                     try:
                                         res = httpx.post(
-                                            "http://localhost:8000/reply-to-candidate",
+                                            f"{BACKEND_URL}/reply-to-candidate",
                                             params={
                                                 "email": cand_email, 
                                                 "subject": latest_subject, 
