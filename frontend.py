@@ -17,9 +17,9 @@ st.set_page_config(page_title="AI Recruiter Pro", layout="wide")
 
 # --- 0. CONFIGURATION (UPDATE THESE!) ---
 # Replace this with your actual Render URL
-BACKEND_URL = "https://your-backend-name.onrender.com" 
+BACKEND_URL = "https://ai-recruiter-backend.onrender.com" 
 # Replace this with your actual Streamlit URL
-FRONTEND_URL = "https://your-app-name.streamlit.app" 
+FRONTEND_URL = "https://ai-recruiter-pro-adilzahoormalik000.streamlit.app" 
 
 # --- 1. LOCAL CACHE SYSTEM ---
 CACHE_FILE = "local_cache.json"
