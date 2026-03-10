@@ -1,8 +1,8 @@
-fastapi
-uvicorn
-openai
-python-multipart
-httpx
-pymupdf
-python-dotenv
-pydantic
+fastapi==0.110.0
+uvicorn==0.27.1
+openai==1.12.0
+python-multipart==0.0.9
+httpx==0.27.0
+pymupdf==1.23.25
+python-dotenv==1.0.1
+pydantic==2.6.1
