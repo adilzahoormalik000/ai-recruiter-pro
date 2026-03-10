@@ -1,4 +1,8 @@
-streamlit
+fastapi
+uvicorn
+openai
+python-multipart
 httpx
-streamlit-oauth
+pymupdf
 python-dotenv
+pydantic
