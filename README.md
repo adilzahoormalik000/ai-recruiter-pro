@@ -23,7 +23,8 @@ Traditional Applicant Tracking Systems (ATS) rely heavily on rigid, one-to-one k
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/yourusername/AI_RECRUITER.git](https://github.com/yourusername/AI_RECRUITER.git)
+git clone https://github.com/adilzahoor2812/Resume_Analyzer_With_ATS_Score.git
+cd Resume_Analyzer_With_ATS_Score
 cd AI_RECRUITER
 2. Create a Virtual Environment
 python3 -m venv .venv
